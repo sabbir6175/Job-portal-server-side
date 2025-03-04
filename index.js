@@ -41,16 +41,39 @@ async function run() {
         const result = await cursor.toArray()
         res.send(result)
     })
-    // job application all data fetch
+
+
+    // job my application all data fetch
+    //get all data get one data get some data [o , 1, many]
     app.get('/job-application', async(req,res)=>{
       const email = req.query.email;
       const query = {applicant_email: email}
       const result = await JobsApplicationCollection.find(query).toArray()
+
+      for(const application of result){
+          console.log(application.job_id)
+          const query = {_id: new ObjectId(application.job_id)}
+          const job = await JobsCollection.findOne(query)
+          if(job){
+            application.title = job.title;
+            application.company = job.company;
+            application.company_logo = job.company_logo;
+            application.location = job.location;
+            application.jobType = job.jobType;
+          }
+      }
+
       res.send(result)
     })
     app.post('/job-applications', async(req,res)=>{
       const application = req.body;
       const result = await JobsApplicationCollection.insertOne(application)
+      res.send(result)
+    })
+    app.delete('/job-application/:id', async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await JobsApplicationCollection.deleteOne(query)
       res.send(result)
     })
     
