@@ -41,7 +41,19 @@ async function run() {
         const result = await cursor.toArray()
         res.send(result)
     })
-
+     //job details page
+     app.get('/Jobs/:id', async(req, res)=>{
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await JobsCollection.findOne(query)
+      res.send(result)
+  })
+  //job post
+  app.post('/jobs', async(req, res)=>{
+    const job = req.body;
+    const result = await JobsCollection.insertOne(job)
+    res.send(result)
+  })
 
     // job my application all data fetch
     //get all data get one data get some data [o , 1, many]
@@ -70,6 +82,8 @@ async function run() {
       const result = await JobsApplicationCollection.insertOne(application)
       res.send(result)
     })
+
+    //delete JobsApplicationCollection data
     app.delete('/job-application/:id', async(req,res)=>{
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
@@ -77,13 +91,7 @@ async function run() {
       res.send(result)
     })
     
-    //job details page
-    app.get('/Jobs/:id', async(req, res)=>{
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) }
-        const result = await JobsCollection.findOne(query)
-        res.send(result)
-    })
+   
 
 
   } finally {
