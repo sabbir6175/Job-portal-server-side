@@ -4,19 +4,40 @@ require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000;
 const jwt = require('jsonwebtoken');
-var cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 //middleware
 app.use(cors(
   {
-    origin: ['http://localhost:5173'],
+    origin: [
+      'http://localhost:5173',
+      "https://job-portal-project-34f44.web.app",
+      "https://job-portal-project-34f44.firebaseapp.com"
+    ],
     credentials: true
   }
 ))
+// app.use(cors())
 app.use(express.json());
 app.use(cookieParser())
+
+
+const VerifyToken=(req, res, next)=>{
+  const token = req.cookies.token;
+  if(!token){
+    return res.status(401).send({message: "unAuthorized access"});
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded)=>{
+    if(err){
+      return res.status(401).send({message: "unAuthorized access"});
+    }
+    req.user = decoded;
+    next();
+  })
+
+}
 
 
 
@@ -34,11 +55,11 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         // job related apis
     const JobsCollection = client.db('JobPortal').collection('Jobs')
@@ -50,7 +71,8 @@ async function run() {
       const token = jwt.sign(user, process.env.JWT_SECRET, {expiresIn: '5h'})
       res.cookie('token', token, {
         httpOnly: true, 
-        secure: false 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
       })
       .send({success: true})
     
@@ -58,7 +80,8 @@ async function run() {
     app.post('/logout', async(req,res)=>{
       res.clearCookie('token',{
         httpOnly: true, 
-        secure: false 
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict" 
       })
       .send({success: true})
     })
@@ -96,9 +119,14 @@ async function run() {
 
     // job my application all data fetch
     //get all data get one data get some data [o , 1, many]
-    app.get('/job-application', async(req,res)=>{
+    app.get('/job-application', VerifyToken,  async(req,res)=>{
       const email = req.query.email;
       const query = {applicant_email: email}
+
+      if(req.user.email !==req.query.email){
+        res.status(403).send({message: "Forbidden access"})
+      }
+
       const result = await JobsApplicationCollection.find(query).toArray()
 
       for(const application of result){
