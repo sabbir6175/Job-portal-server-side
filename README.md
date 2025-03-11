@@ -1,4 +1,4 @@
-# Job Portal API
+# Job Portal server side
 
 This is the backend API for a Job Portal built with **Node.js** and **Express**. The API provides job management functionalities, job application processing, JWT-based authentication, and user-specific job application details. The system uses **MongoDB** for data storage and handles CRUD operations for job postings and applications.
 
